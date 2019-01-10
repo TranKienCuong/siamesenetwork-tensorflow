@@ -2,7 +2,7 @@ from __future__ import generators, division, absolute_import, with_statement, pr
 
 import numpy as np
 import matplotlib.pyplot as plt
-from tensorflow.keras.datasets import mnist
+from tensorflow.keras.datasets import mnist, cifar10
 
 class Dataset(object):
 	images_train = np.array([])
@@ -53,10 +53,28 @@ class MNISTDataset(Dataset):
 		print("Labels test  :", self.labels_test.shape)
 		print("Unique label :", self.unique_train_label)
 		# print("Map label indices:", self.map_train_label_indices)
-		
+
+class Cifar10Dataset(Dataset):
+	def __init__(self):
+		print("===Loading Cifar10 Dataset===")
+		(self.images_train, self.labels_train), (self.images_test, self.labels_test) = cifar10.load_data()
+		self.images_train = np.expand_dims(self.images_train, axis=3) / 255.0
+		self.images_test = np.expand_dims(self.images_test, axis=3) / 255.0
+		self.labels_train = np.expand_dims(self.labels_train, axis=1)
+		self.unique_train_label = np.unique(self.labels_train)
+		self.labels_test = np.squeeze(self.labels_test, axis=1)
+		self.map_train_label_indices = {label: np.flatnonzero(self.labels_train == label) for label in self.unique_train_label}
+		print("Images train :", self.images_train.shape)
+		print("Labels train :", self.labels_train.shape)
+		print("Images test  :", self.images_test.shape)
+		print("Labels test  :", self.labels_test.shape)
+		print("Unique label :", self.unique_train_label)
+		# print("Map label indices:", self.map_train_label_indices)
+
 if __name__ == "__main__":
 	# Test if it can load the dataset properly or not. use the train.py to run the training
-	a = MNISTDataset()
+	# a = MNISTDataset()
+	a = Cifar10Dataset()
 	batch_size = 4
 	ls, rs, xs = a.get_siamese_batch(batch_size)
 	f, axarr = plt.subplots(batch_size, 2)

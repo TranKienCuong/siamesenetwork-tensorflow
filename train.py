@@ -4,7 +4,7 @@ import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
 
-from dataset import MNISTDataset
+from dataset import MNISTDataset, Cifar10Dataset
 from model import *
 
 flags = tf.app.flags
@@ -19,6 +19,12 @@ if __name__ == "__main__":
 	if FLAGS.model == 'mnist':
 		dataset = MNISTDataset()
 		model = mnist_model
+		placeholder_shape = [None] + list(dataset.images_train.shape[1:])
+		print("placeholder_shape", placeholder_shape)
+		colors = ['#ff0000', '#ffff00', '#00ff00', '#00ffff', '#0000ff', '#ff00ff', '#990000', '#999900', '#009900', '#009999']
+	elif FLAGS.model == 'cifar10':
+		dataset = Cifar10Dataset()
+		model = cifar10_model
 		placeholder_shape = [None] + list(dataset.images_train.shape[1:])
 		print("placeholder_shape", placeholder_shape)
 		colors = ['#ff0000', '#ffff00', '#00ff00', '#00ffff', '#0000ff', '#ff00ff', '#990000', '#999900', '#009900', '#009999']
