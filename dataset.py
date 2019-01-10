@@ -1,5 +1,6 @@
 from __future__ import generators, division, absolute_import, with_statement, print_function, unicode_literals
 
+import gzip
 import numpy as np
 import matplotlib.pyplot as plt
 from tensorflow.keras.datasets import mnist
@@ -41,7 +42,33 @@ class Dataset(object):
 class MNISTDataset(Dataset):
 	def __init__(self):
 		print("===Loading MNIST Dataset===")
-		(self.images_train, self.labels_train), (self.images_test, self.labels_test) = mnist.load_data()
+		# (self.images_train, self.labels_train), (self.images_test, self.labels_test) = mnist.load_data()
+
+		files = [
+			'./dataset/train-labels-idx1-ubyte.gz',
+			'./dataset/train-images-idx3-ubyte.gz',
+			'./dataset/test-labels-idx1-ubyte.gz',
+			'./dataset/test-images-idx3-ubyte.gz'
+		]
+
+		width = 96
+		height = 96
+		channels = 3
+
+		with gzip.open(files[0], 'rb') as lbpath:
+			self.labels_train = np.frombuffer(lbpath.read(), np.uint8, offset=8)
+
+		with gzip.open(files[1], 'rb') as imgpath:
+			self.images_train = np.frombuffer(
+			imgpath.read(), np.uint8, offset=16).reshape(len(self.labels_train), width, height, channels)
+
+		with gzip.open(files[2], 'rb') as lbpath:
+			self.labels_test = np.frombuffer(lbpath.read(), np.uint8, offset=8)
+
+		with gzip.open(files[3], 'rb') as imgpath:
+			self.images_test = np.frombuffer(
+			imgpath.read(), np.uint8, offset=16).reshape(len(self.labels_test), width, height, channels)
+
 		self.images_train = np.expand_dims(self.images_train, axis=3) / 255.0
 		self.images_test = np.expand_dims(self.images_test, axis=3) / 255.0
 		self.labels_train = np.expand_dims(self.labels_train, axis=1)
@@ -53,7 +80,7 @@ class MNISTDataset(Dataset):
 		print("Labels test  :", self.labels_test.shape)
 		print("Unique label :", self.unique_train_label)
 		# print("Map label indices:", self.map_train_label_indices)
-		
+
 if __name__ == "__main__":
 	# Test if it can load the dataset properly or not. use the train.py to run the training
 	a = MNISTDataset()
