@@ -10,6 +10,7 @@ class Dataset(object):
 	labels_train = np.array([])
 	labels_test = np.array([])
 	unique_train_label = np.array([])
+	labels_name = np.array([])
 	map_train_label_indices = dict()
 
 	def _get_siamese_similar_pair(self):
@@ -46,6 +47,7 @@ class MNISTDataset(Dataset):
 		self.images_test = np.expand_dims(self.images_test, axis=3) / 255.0
 		self.labels_train = np.expand_dims(self.labels_train, axis=1)
 		self.unique_train_label = np.unique(self.labels_train)
+		self.labels_name = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
 		self.map_train_label_indices = {label: np.flatnonzero(self.labels_train == label) for label in self.unique_train_label}
 		print("Images train :", self.images_train.shape)
 		print("Labels train :", self.labels_train.shape)
@@ -63,6 +65,7 @@ class Cifar10Dataset(Dataset):
 		self.labels_train = np.expand_dims(self.labels_train, axis=1)
 		self.unique_train_label = np.unique(self.labels_train)
 		self.labels_test = np.squeeze(self.labels_test, axis=1)
+		self.labels_name = ["airplane", "automobile", "bird", "cat", "deer", "dog", "frog", "horse", "ship", "truck"]
 		self.map_train_label_indices = {label: np.flatnonzero(self.labels_train == label) for label in self.unique_train_label}
 		print("Images train :", self.images_train.shape)
 		print("Labels train :", self.labels_train.shape)

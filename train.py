@@ -91,8 +91,3 @@ if __name__ == "__main__":
 				plt.savefig('img/%d.jpg' % (i + 1))
 
 		saver.save(sess, "model/model.ckpt")
-
-
-
-
-
