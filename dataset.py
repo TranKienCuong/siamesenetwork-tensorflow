@@ -2,7 +2,12 @@ from __future__ import generators, division, absolute_import, with_statement, pr
 
 import numpy as np
 import matplotlib.pyplot as plt
+import tensorflow as tf
 from tensorflow.keras.datasets import mnist, cifar10
+
+flags = tf.app.flags
+FLAGS = flags.FLAGS
+flags.DEFINE_string('model', 'mnist', 'model to run')
 
 class Dataset(object):
 	images_train = np.array([])
@@ -60,9 +65,8 @@ class Cifar10Dataset(Dataset):
 	def __init__(self):
 		print("===Loading Cifar10 Dataset===")
 		(self.images_train, self.labels_train), (self.images_test, self.labels_test) = cifar10.load_data()
-		self.images_train = np.expand_dims(self.images_train, axis=3) / 255.0
-		self.images_test = np.expand_dims(self.images_test, axis=3) / 255.0
-		self.labels_train = np.expand_dims(self.labels_train, axis=1)
+		self.images_train = self.images_train / 255.0
+		self.images_test = self.images_test / 255.0
 		self.unique_train_label = np.unique(self.labels_train)
 		self.labels_test = np.squeeze(self.labels_test, axis=1)
 		self.labels_name = ["airplane", "automobile", "bird", "cat", "deer", "dog", "frog", "horse", "ship", "truck"]
@@ -76,14 +80,22 @@ class Cifar10Dataset(Dataset):
 
 if __name__ == "__main__":
 	# Test if it can load the dataset properly or not. use the train.py to run the training
-	# a = MNISTDataset()
-	a = Cifar10Dataset()
+	if (FLAGS.model == 'mnist'):
+		a = MNISTDataset()
+	elif (FLAGS.model == 'cifar10'):
+		a = Cifar10Dataset()
+	else:
+		raise NotImplementedError("Model for %s is not implemented yet" % FLAGS.model)
+
 	batch_size = 4
 	ls, rs, xs = a.get_siamese_batch(batch_size)
 	f, axarr = plt.subplots(batch_size, 2)
 	for idx, (l, r, x) in enumerate(zip(ls, rs, xs)):
+		if (FLAGS.model == 'mnist'):
+			l = np.squeeze(l, axis=2)
+			r = np.squeeze(r, axis=2)
 		print("Row", idx, "Label:", "similar" if x else "dissimilar")
-		print("max:", np.squeeze(l, axis=2).max())
-		axarr[idx, 0].imshow(np.squeeze(l, axis=2))
-		axarr[idx, 1].imshow(np.squeeze(r, axis=2))
+		print("Max pixel value:", l.max())
+		axarr[idx, 0].imshow(l)
+		axarr[idx, 1].imshow(r)
 	plt.show()

@@ -12,17 +12,17 @@ FLAGS = flags.FLAGS
 flags.DEFINE_integer('batch_size', 512, 'Batch size.')
 flags.DEFINE_integer('train_iter', 2000, 'Total training iter')
 flags.DEFINE_integer('step', 50, 'Save after ... iteration')
-flags.DEFINE_string('model', 'mnist', 'model to run')
+flags.DEFINE_string('model_train', 'mnist', 'model to run')
 
 if __name__ == "__main__":
 	#setup dataset
-	if FLAGS.model == 'mnist':
+	if FLAGS.model_train == 'mnist':
 		dataset = MNISTDataset()
 		model = mnist_model
 		placeholder_shape = [None] + list(dataset.images_train.shape[1:])
 		print("placeholder_shape", placeholder_shape)
 		colors = ['#ff0000', '#ffff00', '#00ff00', '#00ffff', '#0000ff', '#ff00ff', '#990000', '#999900', '#009900', '#009999']
-	elif FLAGS.model == 'cifar10':
+	elif FLAGS.model_train == 'cifar10':
 		dataset = Cifar10Dataset()
 		model = cifar10_model
 		placeholder_shape = [None] + list(dataset.images_train.shape[1:])

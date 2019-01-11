@@ -10,7 +10,7 @@ from matplotlib import gridspec
 
 flags = tf.app.flags
 FLAGS = flags.FLAGS
-flags.DEFINE_string('model', 'mnist', 'model to run')
+flags.DEFINE_string('model_test', 'mnist', 'model to run')
 flags.DEFINE_string('checkpoint_path', 'model/model.ckpt', 'model checkpoint path')
 flags.DEFINE_integer('retrieved_images', 7, 'number of retrieved images')
 
@@ -27,13 +27,13 @@ def show_image(idxs, data):
   plt.show()
 
 if __name__ == "__main__":
-  if FLAGS.model == 'mnist':
+  if FLAGS.model_test == 'mnist':
     dataset = MNISTDataset()
     img_placeholder = tf.placeholder(tf.float32, [None, 28, 28, 1], name='img')
     model = mnist_model
-  elif FLAGS.model == 'cifar10':
+  elif FLAGS.model_test == 'cifar10':
     dataset = Cifar10Dataset()
-    img_placeholder = tf.placeholder(tf.float32, [None, 32, 32, 1, 3], name='img')
+    img_placeholder = tf.placeholder(tf.float32, [None, 32, 32, 3], name='img')
     model = cifar10_model
   else:
     raise NotImplementedError("Model for %s is not implemented yet" % FLAGS.model)
