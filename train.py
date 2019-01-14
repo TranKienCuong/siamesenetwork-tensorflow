@@ -54,8 +54,6 @@ if __name__ == "__main__":
 	# tf.scalar_summary('lr', learning_rate)
 	# train_step = tf.train.RMSPropOptimizer(learning_rate).minimize(loss, global_step=global_step)
 
-	# train_step = tf.train.GradientDescentOptimizer(0.01).minimize(loss, global_step=global_step)
-
 	train_step = tf.train.MomentumOptimizer(0.01, 0.99, use_nesterov=True).minimize(loss, global_step=global_step)
 
 	# Start Training
