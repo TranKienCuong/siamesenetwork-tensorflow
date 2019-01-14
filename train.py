@@ -4,7 +4,7 @@ import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
 
-from dataset import MNISTDataset
+from dataset import *
 from model import *
 
 flags = tf.app.flags
@@ -12,18 +12,27 @@ FLAGS = flags.FLAGS
 flags.DEFINE_integer('batch_size', 512, 'Batch size.')
 flags.DEFINE_integer('train_iter', 2000, 'Total training iter')
 flags.DEFINE_integer('step', 50, 'Save after ... iteration')
-flags.DEFINE_string('model', 'mnist', 'model to run')
+flags.DEFINE_string('model_train', 'mnist', 'model to run')
 
 if __name__ == "__main__":
 	#setup dataset
-	if FLAGS.model == 'mnist':
+	if FLAGS.model_train == 'mnist':
 		dataset = MNISTDataset()
-		model = mnist_model
-		placeholder_shape = [None] + list(dataset.images_train.shape[1:])
-		print("placeholder_shape", placeholder_shape)
+		colors = ['#ff0000', '#ffff00', '#00ff00', '#00ffff', '#0000ff', '#ff00ff', '#990000', '#999900', '#009900', '#009999']
+	elif FLAGS.model_train == 'custom':
+		dataset = CustomDataset()
+		colors = ['#ff0000', '#00ff00']
+	elif FLAGS.model_train == 'cifar10':
+		dataset = Cifar10Dataset()
+		colors = ['#ff0000', '#ffff00', '#00ff00', '#00ffff', '#0000ff', '#ff00ff', '#990000', '#999900', '#009900', '#009999']
+	elif FLAGS.model_train == 'cifar100':
+		dataset = Cifar100Dataset()
 		colors = ['#ff0000', '#ffff00', '#00ff00', '#00ffff', '#0000ff', '#ff00ff', '#990000', '#999900', '#009900', '#009999']
 	else:
 		raise NotImplementedError("Model for %s is not implemented yet" % FLAGS.model)
+
+	placeholder_shape = [None] + list(dataset.images_train.shape[1:])
+	print("placeholder_shape", placeholder_shape)
 
 	# Setup network
 	next_batch = dataset.get_siamese_batch
@@ -79,14 +88,9 @@ if __name__ == "__main__":
 				# plot result
 				f = plt.figure(figsize=(16,9))
 				f.set_tight_layout(True)
-				for j in range(10):
+				for j in range(colors.__len__()):
 				    plt.plot(feat[labels==j, 0].flatten(), feat[labels==j, 1].flatten(), '.', c=colors[j], alpha=0.8)
 				plt.legend(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'])
 				plt.savefig('img/%d.jpg' % (i + 1))
 
 		saver.save(sess, "model/model.ckpt")
-
-
-
-
-
