@@ -21,7 +21,7 @@ if __name__ == "__main__":
 		colors = ['#ff0000', '#ffff00', '#00ff00', '#00ffff', '#0000ff', '#ff00ff', '#990000', '#999900', '#009900', '#009999']
 	elif FLAGS.model_train == 'custom':
 		dataset = CustomDataset()
-		colors = ['#ff0000', '#00ff00']
+		colors = ['#ff0000', '#ffff00', '#00ff00', '#00ffff', '#0000ff', '#ff00ff', '#990000', '#999900', '#009900', '#009999']
 	elif FLAGS.model_train == 'cifar10':
 		dataset = Cifar10Dataset()
 		colors = ['#ff0000', '#ffff00', '#00ff00', '#00ffff', '#0000ff', '#ff00ff', '#990000', '#999900', '#009900', '#009999']

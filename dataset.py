@@ -97,7 +97,7 @@ class CustomDataset(Dataset):
 		self.images_test = self.images_test / 255.0
 		self.labels_train = np.expand_dims(self.labels_train, axis=1)
 		self.unique_train_label = np.unique(self.labels_train)
-		self.labels_name = ["cart", "launch"]
+		self.labels_name = ["call", "cart", "launch", "login", "logout", "remove", "search", "send", "settings", "share"]
 		self.map_train_label_indices = {label: np.flatnonzero(self.labels_train == label) for label in self.unique_train_label}
 		print("Images train :", self.images_train.shape)
 		print("Labels train :", self.labels_train.shape)
