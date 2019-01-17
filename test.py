@@ -58,6 +58,19 @@ if __name__ == "__main__":
     saver.restore(sess, FLAGS.checkpoint_path)
     feats = sess.run(net, feed_dict={img_placeholder:test_images[:10000]})                
 
+  # Calculate accuracy of the model
+  count = 0
+  n = dataset.images_test.shape[0]
+  for j in range(n):
+    search_feat = [feats[j]]
+    dist = cdist(feats, search_feat, 'cosine')
+    rank = np.argsort(dist.ravel())
+    predict1 = labels_test[rank[0]]
+    predict2 = labels_test[rank[1]]
+    if labels_test[j] == predict1 and labels_test[j] == predict2:
+      count += 1
+  print("Accuracy = ", count / n)
+
   # Searching for similar test images from trainset based on siamese feature
   # Generate new random test image
   idx = np.random.randint(0, len_test)
@@ -75,7 +88,7 @@ if __name__ == "__main__":
     ckpt = tf.train.get_checkpoint_state("model")
     saver.restore(sess, FLAGS.checkpoint_path)
     search_feat = sess.run(net, feed_dict={img_placeholder:[im]})
-    
+
   # Calculate the cosine similarity and sort
   dist = cdist(feats, search_feat, 'cosine')
   rank = np.argsort(dist.ravel())

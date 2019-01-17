@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 
 from dataset import *
 from model import *
+from scipy.spatial.distance import cdist
 
 flags = tf.app.flags
 FLAGS = flags.FLAGS
@@ -83,8 +84,19 @@ if __name__ == "__main__":
 				#generate test
 				# TODO: create a test file and run per batch
 				feat = sess.run(left_output, feed_dict={left:dataset.images_test})
-				
 				labels = dataset.labels_test
+				count = 0
+				n = dataset.images_test.shape[0]
+				for j in range(n):
+					search_feat = [feat[j]]
+					dist = cdist(feat, search_feat, 'cosine')
+					rank = np.argsort(dist.ravel())
+					predict1 = labels[rank[0]]
+					predict2 = labels[rank[1]]
+					if labels[j] == predict1 and labels[j] == predict2:
+						count += 1
+				print("Accuracy = ", count / n)
+					
 				# plot result
 				f = plt.figure(figsize=(16,9))
 				f.set_tight_layout(True)
