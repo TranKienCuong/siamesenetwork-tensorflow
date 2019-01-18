@@ -115,7 +115,12 @@ class Cifar10Dataset(Dataset):
 		self.images_test = self.images_test / 255.0
 		self.unique_train_label = np.unique(self.labels_train)
 		self.labels_test = np.squeeze(self.labels_test, axis=1)
-		self.labels_name = ["airplane", "automobile", "bird", "cat", "deer", "dog", "frog", "horse", "ship", "truck"]
+		self.labels_name = ["airplane", "automobile", "bird", "cat", "deer", "dog", "frog", "horse",
+			"ship", "truck", "account", "add", "airplane", "back", "battery", "bell", "bluetooth",
+			"calculator", "camera", "clock", "close", "cut", "download", "edit", "file", "fingerprint",
+			"fire", "flag", "fullscreen", "gift", "hamburger", "headphones", "heart", "home", "info",
+			"like", "location", "lock", "mail", "map", "message", "microphone", "music", "pause", "pin",
+			"play", "question", "refresh", "save", "star", "tag", "trophy", "unlock", "upload", "volume"]
 		self.map_train_label_indices = {label: np.flatnonzero(self.labels_train == label) for label in self.unique_train_label}
 		print("Images train :", self.images_train.shape)
 		print("Labels train :", self.labels_train.shape)
