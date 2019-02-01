@@ -40,7 +40,7 @@ if __name__ == "__main__":
     dataset = Cifar100Dataset()
     img_placeholder = tf.placeholder(tf.float32, [None, 32, 32, 3], name='img')
   else:
-    raise NotImplementedError("Model for %s is not implemented yet" % FLAGS.model)
+    raise NotImplementedError("Model for %s is not implemented yet" % FLAGS.model_test)
 
   test_images = dataset.images_test
   labels_test = dataset.labels_test

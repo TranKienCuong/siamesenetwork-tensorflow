@@ -3,6 +3,8 @@ from __future__ import generators, division, absolute_import, with_statement, pr
 import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
+import tensorflow_hub as hub
+import cv2 as cv
 
 from dataset import *
 from model import *
@@ -14,6 +16,7 @@ flags.DEFINE_integer('batch_size', 512, 'Batch size.')
 flags.DEFINE_integer('train_iter', 2000, 'Total training iter')
 flags.DEFINE_integer('step', 50, 'Save after ... iteration')
 flags.DEFINE_string('model_train', 'mnist', 'model to run')
+flags.DEFINE_string('module', 'https://tfhub.dev/google/imagenet/resnet_v2_50/feature_vector/1', 'TF-Hub module to use')
 
 if __name__ == "__main__":
 	#setup dataset
@@ -30,21 +33,41 @@ if __name__ == "__main__":
 		dataset = Cifar100Dataset()
 		colors = ['#ff0000', '#ffff00', '#00ff00', '#00ffff', '#0000ff', '#ff00ff', '#990000', '#999900', '#009900', '#009999']
 	else:
-		raise NotImplementedError("Model for %s is not implemented yet" % FLAGS.model)
+		raise NotImplementedError("Model for %s is not implemented yet" % FLAGS.model_train)
 
+	module = hub.Module(FLAGS.module, trainable=True)
+	height, width = hub.get_expected_image_size(module)
+	with tf.Session() as sess:
+		sess.run(tf.global_variables_initializer())
+		dataset.images_train = sess.run(tf.image.resize_images(dataset.images_train, [height, width]))
+		dataset.images_test = sess.run(tf.image.resize_images(dataset.images_test, [height, width]))
+	
 	placeholder_shape = [None] + list(dataset.images_train.shape[1:])
 	print("placeholder_shape", placeholder_shape)
 
-	# Setup network
-	next_batch = dataset.get_siamese_batch
 	left = tf.placeholder(tf.float32, placeholder_shape, name='left')
 	right = tf.placeholder(tf.float32, placeholder_shape, name='right')
+
+	features_left = module(left)
+	features_right = module(right)
+
+	with tf.variable_scope('CustomLayer'):
+		dim = features_left.get_shape().as_list()[1]
+		weight = tf.get_variable('weights', initializer=tf.truncated_normal((dim, dim)))
+		bias = tf.get_variable('bias', initializer=tf.zeros((dim)))
+		logits_left = tf.nn.xw_plus_b(features_left, weight, bias)
+		logits_right = tf.nn.xw_plus_b(features_right, weight, bias)
+
+	var_list = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='CustomLayer')
+
+	# Setup network
+	next_batch = dataset.get_siamese_batch
 	with tf.name_scope("similarity"):
 		label = tf.placeholder(tf.int32, [None, 1], name='label') # 1 if same, 0 if different
 		label_float = tf.to_float(label)
 	margin = 0.5
-	left_output = model(left, reuse=False)
-	right_output = model(right, reuse=True)
+	left_output = logits_left
+	right_output = logits_right
 	loss = contrastive_loss(left_output, right_output, label_float, margin)
 
 	# Setup Optimizer
@@ -55,7 +78,8 @@ if __name__ == "__main__":
 	# tf.scalar_summary('lr', learning_rate)
 	# train_step = tf.train.RMSPropOptimizer(learning_rate).minimize(loss, global_step=global_step)
 
-	train_step = tf.train.MomentumOptimizer(0.01, 0.99, use_nesterov=True).minimize(loss, global_step=global_step)
+	train_step = tf.train.GradientDescentOptimizer(0.01).minimize(loss, global_step=global_step, var_list=var_list)
+	# train_step = tf.train.MomentumOptimizer(0.01, 0.99, use_nesterov=True).minimize(loss, global_step=global_step)
 
 	# Start Training
 	saver = tf.train.Saver()
