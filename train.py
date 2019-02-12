@@ -15,6 +15,7 @@ FLAGS = flags.FLAGS
 flags.DEFINE_integer('batch_size', 512, 'Batch size.')
 flags.DEFINE_integer('train_iter', 2000, 'Total training iter')
 flags.DEFINE_integer('step', 50, 'Save after ... iteration')
+flags.DEFINE_float('margin', 0.5, 'Margin for contrastive loss')
 flags.DEFINE_string('model_train', 'mnist', 'model to run')
 flags.DEFINE_string('module', 'https://tfhub.dev/google/imagenet/resnet_v2_50/feature_vector/1', 'TF-Hub module to use')
 
@@ -65,10 +66,10 @@ if __name__ == "__main__":
 	with tf.name_scope("similarity"):
 		label = tf.placeholder(tf.int32, [None, 1], name='label') # 1 if same, 0 if different
 		label_float = tf.to_float(label)
-	margin = 0.5
 	left_output = logits_left
 	right_output = logits_right
-	loss = contrastive_loss(left_output, right_output, label_float, margin)
+	print('Margin: ', FLAGS.margin)
+	loss = contrastive_loss(left_output, right_output, label_float, FLAGS.margin)
 
 	# Setup Optimizer
 	global_step = tf.Variable(0, trainable=False)
