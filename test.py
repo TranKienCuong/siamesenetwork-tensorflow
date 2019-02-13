@@ -2,10 +2,8 @@ import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
 import tensorflow_hub as hub
-import cv2 as cv
 
 from dataset import *
-from model import *
 
 from scipy.spatial.distance import cdist
 from matplotlib import gridspec
@@ -72,48 +70,32 @@ if __name__ == "__main__":
   len_test = len(test_images)
 
   # Create the siamese net feature extraction model
-  net = model(img_placeholder, reuse=False)
+  print('Loading TF-Hub module...')
+  module = hub.Module(FLAGS.module)
+  height, width = hub.get_expected_image_size(module)
 
-  # Restore from checkpoint and calculate the features from all of train data
+  resized_images = tf.image.resize_images(test_images, [height, width])
+
+  print('Extracting features...')
+  features = module(resized_images)
+
+  with tf.variable_scope('CustomLayer'):
+    dim = features.get_shape().as_list()[1]
+    weight = tf.get_variable('weights', initializer=tf.truncated_normal((dim, dim)))
+    bias = tf.get_variable('bias', initializer=tf.zeros((dim)))
+    logits = tf.nn.xw_plus_b(features, weight, bias)
+
   saver = tf.train.Saver()
   with tf.Session() as sess:
     sess.run(tf.global_variables_initializer())
     ckpt = tf.train.get_checkpoint_state("model")
     saver.restore(sess, FLAGS.checkpoint_path)
-    feats1 = sess.run(net, feed_dict={img_placeholder:test_images[:10000]})  
+    feats = sess.run(logits)
+  print('Features :', feats.shape)
 
-  # Create the CNN pre-trained feature extraction model
-  print('Loading TF-Hub module...')
-  module = hub.Module(FLAGS.module)
-  height, width = hub.get_expected_image_size(module)
-
-  print('Resizing images...')
-  resized_images = np.zeros((len_test, height, width, 3))
-  for i in range(len_test):
-    img = cv.resize(test_images[i], dsize=(width, height), interpolation=cv.INTER_CUBIC)
-    resized_images[i] = img
-  print('Resized images :', resized_images.shape)
-
-  print('Extracting features...')
-  feats2 = module(resized_images)
-  with tf.Session() as sess:
-    sess.run(tf.global_variables_initializer())
-    feats2 = sess.run(feats2)
-
-  print('Siamese net features :', feats1.shape)
-  print('CNN pre-trained features :', feats2.shape)
-
-  distances1 = calculate_distances(feats1)
-  distances2 = calculate_distances(feats2)
-  distances_avg = (distances1 + distances2) / 2
-
-  accuracy1 = calculate_accuracy(distances1, labels_test)
-  accuracy2 = calculate_accuracy(distances2, labels_test)
-  accuracy_avg = calculate_accuracy(distances_avg, labels_test)
-
-  print("Siamese net accuracy = ", accuracy1)
-  print("CNN pre-trained accuracy = ", accuracy2)
-  print("Average ensembling accuracy = ", accuracy_avg)
+  distances = calculate_distances(feats)
+  accuracy = calculate_accuracy(distances, labels_test)
+  print("Accuracy = ", accuracy)
 
   # Searching for similar test images from trainset based on siamese feature
   # Generate new random test image
@@ -125,11 +107,10 @@ if __name__ == "__main__":
   show_image(idx, test_images)
 
   # Run the test image through the network to get the test features
-  saver = tf.train.Saver()
-  search_feat = [feats1[idx]]
+  search_feat = [feats[idx]]
 
   # Calculate the cosine similarity and sort
-  dist = cdist(feats1, search_feat, 'cosine')
+  dist = cdist(feats, search_feat, 'cosine')
   rank = np.argsort(dist.ravel())
 
   # Show the top n similar image from train data

@@ -4,7 +4,6 @@ import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
 import tensorflow_hub as hub
-import cv2 as cv
 
 from dataset import *
 from model import *
