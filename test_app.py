@@ -9,12 +9,15 @@ from scipy.spatial.distance import cdist
 from matplotlib import gridspec
 from PIL import Image
 
+from model import *
+
 flags = tf.app.flags
 FLAGS = flags.FLAGS
 flags.DEFINE_string('checkpoint_path', 'model/model.ckpt', 'model checkpoint path')
 flags.DEFINE_integer('retrieved_images', 7, 'number of retrieved images')
 flags.DEFINE_string('module', 'https://tfhub.dev/google/imagenet/mobilenet_v2_100_224/feature_vector/2', 'TF-Hub module to use')
 flags.DEFINE_boolean('debug', False, 'show wrong images or not')
+flags.DEFINE_string('model_type', 'retrained', '"siamese" or "cnn" or "retrained"')
 
 # Helper function to plot image
 def show_image(idxs, data):
@@ -66,10 +69,12 @@ if __name__ == "__main__":
   devices = []
   labels = []
 
-   # Create the siamese net feature extraction model
-  print(f'Loading TF-Hub module {FLAGS.module}...')
-  module = hub.Module(FLAGS.module)
-  height, width = hub.get_expected_image_size(module)
+  if FLAGS.model_type == 'siamese':
+    height, width = 96, 96
+  else:
+    print(f'Loading TF-Hub module {FLAGS.module}...')
+    module = hub.Module(FLAGS.module)
+    height, width = hub.get_expected_image_size(module)
   print('Expected width height:', width, height)
 
   print('Resizing images...')
@@ -90,24 +95,32 @@ if __name__ == "__main__":
   images = np.array(tf.Session().run(images))
   print('Resized images:', images.shape)
 
-  len_test = len(images)
-  # resized_images = tf.image.resize_images(test_images, [height, width])
-
   print(f'Extracting features from model {FLAGS.checkpoint_path}...')
-  features = module(images)
-
-  with tf.variable_scope('CustomLayer'):
-    dim = features.get_shape().as_list()[1]
-    weight = tf.get_variable('weights', initializer=tf.truncated_normal((dim, dim)))
-    bias = tf.get_variable('bias', initializer=tf.zeros((dim)))
-    logits = tf.nn.xw_plus_b(features, weight, bias)
+  if FLAGS.model_type == 'siamese':
+    img_placeholder = tf.placeholder(tf.float32, [None, 96, 96, 3], name='img')
+    net = model(img_placeholder, reuse=False)
+  else:
+    features = module(images)
+    with tf.variable_scope('CustomLayer'):
+      dim = features.get_shape().as_list()[1]
+      weight = tf.get_variable('weights', initializer=tf.truncated_normal((dim, dim)))
+      bias = tf.get_variable('bias', initializer=tf.zeros((dim)))
+      logits = tf.nn.xw_plus_b(features, weight, bias)
 
   saver = tf.train.Saver()
   with tf.Session() as sess:
     sess.run(tf.global_variables_initializer())
     ckpt = tf.train.get_checkpoint_state("model")
-    saver.restore(sess, FLAGS.checkpoint_path)
-    feats = sess.run(logits)
+    if FLAGS.model_type == 'siamese':
+      saver.restore(sess, FLAGS.checkpoint_path)
+      feats = sess.run(net, feed_dict={img_placeholder:images}) 
+    elif FLAGS.model_type == 'cnn':
+      feats = sess.run(features)
+    elif FLAGS.model_type == 'retrained':
+      saver.restore(sess, FLAGS.checkpoint_path)
+      feats = sess.run(logits)
+    else:
+      raise NotImplementedError("Model for %s is not implemented yet" % FLAGS.model_test)
   print('Features :', feats.shape)
 
   screen_ids = np.unique(screens)
