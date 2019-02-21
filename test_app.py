@@ -14,6 +14,7 @@ FLAGS = flags.FLAGS
 flags.DEFINE_string('checkpoint_path', 'model/model.ckpt', 'model checkpoint path')
 flags.DEFINE_integer('retrieved_images', 7, 'number of retrieved images')
 flags.DEFINE_string('module', 'https://tfhub.dev/google/imagenet/mobilenet_v2_100_224/feature_vector/2', 'TF-Hub module to use')
+flags.DEFINE_boolean('debug', False, 'show wrong images or not')
 
 # Helper function to plot image
 def show_image(idxs, data):
@@ -36,7 +37,7 @@ def calculate_distances(features):
     distances[i] = cdist(features, search_feat, 'cosine').ravel()
   return distances
 
-def calculate_accuracy(distances, labels, group_labels):
+def calculate_accuracy(distances, labels, group_labels, images, group_images):
   count = 0
   n = len(distances)
   for i in range(n):
@@ -44,15 +45,19 @@ def calculate_accuracy(distances, labels, group_labels):
     predict = group_labels[rank[0]]
     if labels[i] == predict:
       count += 1
+    elif FLAGS.debug:
+      show_image(i, images)
+      show_image(rank[:10], group_images)
   return count / n
 
-def calculate_accuracy_by_groups(distances, groups, labels):
+def calculate_accuracy_by_groups(distances, groups, labels, images):
   group_ids = np.unique(groups)
   accuracy = []
   for group_id in group_ids:
     group_distances = np.transpose(distances[np.where(groups == group_id)])
-    group_labels = np.transpose(labels[np.where(groups == group_id)])
-    accuracy.append(calculate_accuracy(group_distances, labels, group_labels))
+    group_labels = labels[np.where(groups == group_id)]
+    group_images = images[np.where(groups == group_id)]
+    accuracy.append(calculate_accuracy(group_distances, labels, group_labels, images, group_images))
   return np.mean(np.array(accuracy))
 
 if __name__ == "__main__":
@@ -68,9 +73,9 @@ if __name__ == "__main__":
   print('Expected width height:', width, height)
 
   print('Resizing images...')
-  for img_path in glob.glob("images/*-*-*.jpg"):
+  for img_path in glob.glob("images/*_*_*.jpg"):
     img_name = path.splitext(path.basename(img_path))[0]
-    screen, device, label = np.str.split(img_name, '-')
+    screen, device, label = np.str.split(img_name, '_')
     img = Image.open(img_path)
     img = np.array(img.convert('RGB')) / 255.0
     img = tf.image.resize_image_with_pad(img, height, width)
@@ -115,10 +120,5 @@ if __name__ == "__main__":
     screen_devices = devices[screen_indices]
     device_ids = np.unique(screen_devices)
     screen_distances = calculate_distances(screen_feats)
-    accuracy.append(calculate_accuracy_by_groups(screen_distances, screen_devices, screen_labels))
-    for device_id in device_ids:
-      device_indices = np.where(screen_devices == device_id)
-      device_feats = screen_feats[device_indices]
-      device_labels = screen_labels[device_indices]
-      device_images = screen_images[device_indices]
+    accuracy.append(calculate_accuracy_by_groups(screen_distances, screen_devices, screen_labels, screen_images))
   print("Accuracy = ", np.mean(np.array(accuracy)))
